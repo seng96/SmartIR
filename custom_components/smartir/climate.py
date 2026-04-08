@@ -52,6 +52,18 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_POWER_SENSOR_RESTORE_STATE, default=False): cv.boolean
 })
 
+
+def _get_command_configuration_error(commands):
+    """Return an error message when the device command configuration is invalid."""
+    has_power = 'power' in commands
+    has_on = 'on' in commands
+    has_off = 'off' in commands
+
+    if has_power and (has_on or has_off):
+        return "`commands.power` cannot be combined with `commands.on` or `commands.off`"
+
+    return None
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IR Climate platform."""
     _LOGGER.debug("Setting up the smartir platform")
@@ -90,6 +102,14 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             _LOGGER.debug(f"{device_json_path} file loaded")
     except Exception:
         _LOGGER.error("The device JSON file is invalid")
+        return
+
+    command_configuration_error = _get_command_configuration_error(device_data['commands'])
+    if command_configuration_error is not None:
+        _LOGGER.error(
+            "The device JSON file has an invalid command configuration: %s",
+            command_configuration_error,
+        )
         return
 
     async_add_entities([SmartIRClimate(
@@ -359,6 +379,39 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         else:
             await self.async_set_hvac_mode(self._operation_modes[1])
 
+    def _is_device_powered_off(self):
+        """Return whether the device is currently considered off."""
+        if self._power_sensor:
+            power_sensor_state = self.hass.states.get(self._power_sensor)
+            if power_sensor_state is not None:
+                if power_sensor_state.state == STATE_OFF:
+                    return True
+                if power_sensor_state.state == STATE_ON:
+                    return False
+
+        return self._hvac_mode == HVACMode.OFF
+
+    def _get_power_on_primer(self):
+        """Return the command to send before the target command, if any."""
+        if 'on' in self._commands:
+            return self._commands['on']
+
+        if 'power' in self._commands and self._is_device_powered_off():
+            return self._commands['power']
+
+        return None
+
+    async def _send_power_off_command(self):
+        """Send the command that turns the device off, if needed."""
+        if 'power' in self._commands:
+            if self._is_device_powered_off():
+                return
+
+            await self._controller.send(self._commands['power'])
+            return
+
+        await self._controller.send(self._commands['off'])
+
     async def send_command(self):
         async with self._temp_lock:
             try:
@@ -369,11 +422,12 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
                 target_temperature = '{0:g}'.format(self._target_temperature)
 
                 if operation_mode.lower() == HVACMode.OFF:
-                    await self._controller.send(self._commands['off'])
+                    await self._send_power_off_command()
                     return
 
-                if 'on' in self._commands:
-                    await self._controller.send(self._commands['on'])
+                primer_command = self._get_power_on_primer()
+                if primer_command is not None:
+                    await self._controller.send(primer_command)
                     await asyncio.sleep(self._delay)
 
                 if self._support_swing == True:

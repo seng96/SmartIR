@@ -1,0 +1,63 @@
+schema: spec-driven
+
+context: |
+  專案名稱：SmartIR
+  專案類型：Home Assistant 自訂整合，主要以 Python 實作。
+  語言與風格：OpenSpec 產出預設使用繁體中文，保留程式碼、實體平台名稱、
+  Home Assistant 元件名稱、檔案路徑、JSON 欄位與控制器名稱的英文原文。
+
+  領域脈絡：
+  - 這個專案透過 IR/RF 控制器控制真實裝置，並在 Home Assistant 中暴露為
+    `climate`、`fan`、`media_player`、`light` 等實體。
+  - 這不是單純的遙控碼資料庫，也包含 Home Assistant 平台行為、狀態同步、
+    YAML 設定、控制器傳輸與裝置能力映射。
+
+  主要程式結構：
+  - 整合主體位於 `custom_components/smartir/`
+  - 平台實作包含 `climate.py`、`fan.py`、`media_player.py`、`light.py`
+  - 共用控制邏輯位於 `controller.py`
+  - 服務定義位於 `services.yaml`
+  - 整合 metadata 位於 `manifest.json`
+
+  資料與文件：
+  - 裝置 IR code 定義位於 `codes/<platform>/*.json`
+  - 平台文件位於 `docs/`
+  - 平台文件與 code 檔屬於功能面的一部分，行為改動時應一併考慮
+
+  支援的控制器型態：
+  - Broadlink
+  - Xiaomi IR Remote
+  - LOOK.in Remote
+  - ESPHome user-defined service
+  - MQTT publish service
+
+  專案慣例與限制：
+  - 優先維持 Home Assistant 整合慣例與既有實體行為
+  - 優先維持 YAML 設定與既有 device code 的向後相容性
+  - 變更若影響平台行為、狀態欄位或控制流程，需同步評估 `docs/` 與 `codes/`
+  - 不要重新命名、重新品牌化或淡化 SmartIR 專案識別
+
+rules:
+  proposal:
+    - "內容使用繁體中文撰寫，保留程式碼、entity platform、controller 名稱與檔案路徑英文原文。"
+    - "先說明影響的 Home Assistant 平台：`climate`、`fan`、`media_player`、`light` 或共用控制邏輯。"
+    - "明確交代受影響檔案類型：`custom_components/smartir/`、`docs/`、`codes/`、`services.yaml`、`manifest.json`。"
+    - "說明控制器相容性、YAML 設定影響、向後相容性風險，以及是否需要更新文件或 IR code。"
+    - "若變更只涉及重構或內部整理，也要明確寫出不變的使用者行為與 non-goals。"
+  design:
+    - "內容使用繁體中文撰寫，聚焦設計決策，不要只重述需求。"
+    - "設計要對照實際結構，指出會改動的平台模組、共用控制邏輯、文件或 code 檔位置。"
+    - "說明資料流與控制流：HA entity service/狀態更新、controller 發送方式、IR code 載入方式、必要的狀態同步。"
+    - "若變更涉及多平台共用邏輯，需說明如何避免破壞其他平台行為。"
+    - "若變更涉及 HA 狀態還原、感測器、power state 或 capability mapping，需明列成功與失敗情境。"
+  tasks:
+    - "內容使用繁體中文撰寫。"
+    - "任務依可落地順序拆分，優先區分 implementation、docs、codes、verification。"
+    - "每個任務都要能映射到明確檔案或模組，避免使用模糊描述。"
+    - "若行為有改動，必須包含 Home Assistant 實體行為驗證、控制器流程驗證，以及文件或 code 檔更新任務。"
+    - "若變更只影響單一平台或單一設定檔，不必硬拆成多個平台任務。"
+  specs:
+    - "內容使用繁體中文撰寫，聚焦可觀察行為與業務規則，不要寫成實作細節。"
+    - "requirement 與 scenario 應明確指出影響的實體平台、觸發條件、預期狀態變化與失敗情境。"
+    - "若需求涉及 controller 差異、裝置能力限制或 YAML 設定欄位，spec 必須明示前置條件與相容性限制。"
+    - "若變更涉及 `codes/<platform>/*.json` 行為假設，需在 scenario 中表達對裝置能力與指令覆蓋的預期。"

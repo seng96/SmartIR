@@ -19,6 +19,27 @@ _Please note that the device_code field only accepts positive numbers. The .json
 | `power_sensor` | string | optional | *entity_id* for a sensor that monitors whether your device is actually `on` or `off`. This may be a power monitor sensor. (Accepts only on/off states) |
 | `power_sensor_restore_state` | boolean | optional | If `power_sensor` is set, and the device is likely to turn off and back on while still in the set mode (for instance, a minisplit cycling on and off while in heating or cooling mode), setting this to `true` will cause the climate state to update dynamically, following the state of the `power_sensor`. |
 
+## Device code commands
+Some climate devices use explicit `on` / `off` commands, while others only expose a single power toggle command. SmartIR supports both command models, but they are mutually exclusive:
+
+| Name | Type | Description |
+| ---- | :--: | ----------- |
+| `commands.on` + `commands.off` | string | Optional explicit power commands. When `commands.on` exists, SmartIR preserves the current compatible behavior and always sends `on` before non-`off` target commands, while `off` is used for `HVACMode.OFF`. |
+| `commands.power` | string | Optional single power toggle command. When used, it must not appear together with `commands.on` or `commands.off`. SmartIR sends `power` only when a power state change is needed: before a target command when the device is currently `off`, or for `HVACMode.OFF` when the device is currently `on`. |
+
+When using `commands.power`, it is strongly recommended to also configure `power_sensor` so SmartIR can determine the real device power state. Without `power_sensor`, SmartIR falls back to its internal Home Assistant state and may be less accurate if the unit is controlled externally.
+
+Example device code snippet:
+```json
+{
+  "commands": {
+    "power": "...."
+  }
+}
+```
+
+If a device code defines `commands.on`, the current compatible behavior is unchanged. If a device code defines `commands.power`, it must not also define `commands.on` or `commands.off`.
+
 ## Example (using broadlink controller):
 Add a Broadlink RM device named "Bedroom" via config flow (read the [docs](https://www.home-assistant.io/integrations/broadlink/)).
 
