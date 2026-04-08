@@ -1,0 +1,21 @@
+{
+  "manufacturer": "Airmate",
+  "supportedModels": [
+    "Unknown"
+  ],
+  "supportedController": "Broadlink",
+  "commandsEncoding": "Base64",
+  "speed": [
+    "low",
+    "high"
+  ],
+  "commands": {
+    "on": "JgBuAFFuDioqDCsNDiknECgPKg0qDSsNDikNKgwrDikPKQ8oKA4N009xDigrDSoNDygnECoNKwwrDSgPDSoMKw4oECkOKQ4oKg4N1lFvDigrDCsNDygpDioNKg0rDSgPCysOKg4oECgPKQ4oKg4NAA0F",
+    "off": "JgBuAFFuDioqDCsNDiknECgPKg0qDSsNDikNKgwrDikPKQ8oKA4N009xDigrDSoNDygnECoNKwwrDSgPDSoMKw4oECkOKQ4oKg4N1lFvDigrDCsNDygpDioNKg0rDSgPCysOKg4oECgPKQ4oKg4NAA0F",
+    "default": {
+      "low": "JgBuAE5xDCsqDCsNDygnEScPKw0qDSsMKQ8NKQ4qDiknECkPCysM1FJuDSkrDSoNGCAmECsMKw0qDSkOJxAOKQ4qDygnECkODikN1VNuDSoqDSsMDyknDysNKg0pDikPJw8OKg0qDygpDygODioNAA0F",
+      "high": "JgBuAE5xDSoqDSoNDygnEScPKw0qDSsMJxELKwwsDSoQJykPJw8O0VJvDSkrDSoNDyknDysMKw0pDicRJw8MKw0rDygPKSYQKQ4O1lBwDSkrDSoNDygnECoNKw0qDScQJxAMKwwsDygPKCcQKg0MAA0F"
+    },
+    "oscillate": "JgCSAE5wDCwpDSsMDionECgPKwwqDSwMDygLLCsMDCsQKA8oDCsO0FBxCysrDSoNECgnDyoNKw0nECcRCysMKyoODygQJw8oDCsM11BwDikrDCwMDygnDywMKwwnECcRCysMLCsMECcQKA4oDioL2FBwDSkrDCwMDygnECsMKwwnEScQCywMKysMDykOKQ4oDSsOAA0F"
+  }
+}
