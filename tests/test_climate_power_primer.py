@@ -287,6 +287,18 @@ class ClimatePowerPrimerTests(unittest.IsolatedAsyncioTestCase):
             "`commands.power` cannot be combined with `commands.on` or `commands.off`",
         )
 
+    def test_device_files_dir_prefers_repo_codes_when_component_codes_missing(self):
+        component_codes_dir = ROOT / "custom_components" / "smartir" / "codes" / "climate"
+        repo_codes_dir = ROOT / "codes" / "climate"
+
+        def fake_isdir(path):
+            return path == str(repo_codes_dir)
+
+        with patch.object(self.climate_module.os.path, "isdir", side_effect=fake_isdir):
+            device_dir = self.climate_module._get_device_files_absdir("climate")
+
+        self.assertEqual(device_dir, str(repo_codes_dir))
+
     async def test_async_setup_platform_rejects_invalid_command_configuration(self):
         device_data = self._device_data(include_on=False, include_off=True, include_power=True)
         async_add_entities = AsyncMock()
@@ -346,6 +358,35 @@ class ClimatePowerPrimerTests(unittest.IsolatedAsyncioTestCase):
             await entity.send_command()
 
         self.assertEqual(controller.send.await_args_list, [call("cool-24")])
+        sleep_mock.assert_not_awaited()
+
+    async def test_async_set_hvac_mode_with_power_and_no_sensor_turns_on_from_off(self):
+        entity, controller = self._entity(
+            self._device_data(include_on=False, include_off=False, include_power=True),
+            power_sensor_state=None,
+            hvac_mode=self.climate_module.HVACMode.OFF,
+        )
+
+        with patch.object(self.climate_module.asyncio, "sleep", AsyncMock()) as sleep_mock:
+            await entity.async_set_hvac_mode(self.climate_module.HVACMode.COOL)
+
+        self.assertEqual(
+            controller.send.await_args_list,
+            [call("power-toggle"), call("cool-24")],
+        )
+        sleep_mock.assert_awaited_once_with(0.5)
+
+    async def test_async_set_hvac_mode_with_power_and_no_sensor_turns_off_from_on(self):
+        entity, controller = self._entity(
+            self._device_data(include_on=False, include_off=False, include_power=True),
+            power_sensor_state=None,
+            hvac_mode=self.climate_module.HVACMode.COOL,
+        )
+
+        with patch.object(self.climate_module.asyncio, "sleep", AsyncMock()) as sleep_mock:
+            await entity.async_set_hvac_mode(self.climate_module.HVACMode.OFF)
+
+        self.assertEqual(controller.send.await_args_list, [call("power-toggle")])
         sleep_mock.assert_not_awaited()
 
     async def test_legacy_behavior_still_sends_on_before_target(self):

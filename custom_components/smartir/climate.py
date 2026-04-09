@@ -64,12 +64,29 @@ def _get_command_configuration_error(commands):
 
     return None
 
+
+def _get_device_files_absdir(platform):
+    """Return the device codes directory for the current execution layout."""
+    component_codes_dir = os.path.join(COMPONENT_ABS_DIR, 'codes', platform)
+    repo_codes_dir = os.path.join(
+        os.path.dirname(os.path.dirname(COMPONENT_ABS_DIR)),
+        'codes',
+        platform,
+    )
+
+    if os.path.isdir(component_codes_dir):
+        return component_codes_dir
+
+    if os.path.isdir(repo_codes_dir):
+        return repo_codes_dir
+
+    return component_codes_dir
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IR Climate platform."""
     _LOGGER.debug("Setting up the smartir platform")
     device_code = config.get(CONF_DEVICE_CODE)
-    device_files_subdir = os.path.join('codes', 'climate')
-    device_files_absdir = os.path.join(COMPONENT_ABS_DIR, device_files_subdir)
+    device_files_absdir = _get_device_files_absdir('climate')
 
     if not os.path.isdir(device_files_absdir):
         os.makedirs(device_files_absdir)
@@ -83,7 +100,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
         try:
             codes_source = ("https://raw.githubusercontent.com/"
-                            "smartHomeHub/SmartIR/master/"
+                            "seng96/SmartIR/master/"
                             "codes/climate/{}.json")
 
             await Helper.downloader(codes_source.format(device_code), device_json_path)
@@ -344,12 +361,13 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set operation mode."""
+        previous_hvac_mode = self._hvac_mode
         self._hvac_mode = hvac_mode
         
         if not hvac_mode == HVACMode.OFF:
             self._last_on_operation = hvac_mode
 
-        await self.send_command()
+        await self.send_command(previous_hvac_mode)
         self.async_write_ha_state()
 
     async def async_set_fan_mode(self, fan_mode):
@@ -379,7 +397,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         else:
             await self.async_set_hvac_mode(self._operation_modes[1])
 
-    def _is_device_powered_off(self):
+    def _is_device_powered_off(self, fallback_hvac_mode=None):
         """Return whether the device is currently considered off."""
         if self._power_sensor:
             power_sensor_state = self.hass.states.get(self._power_sensor)
@@ -389,22 +407,29 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
                 if power_sensor_state.state == STATE_ON:
                     return False
 
-        return self._hvac_mode == HVACMode.OFF
+        hvac_mode = self._hvac_mode if fallback_hvac_mode is None else fallback_hvac_mode
+        return hvac_mode == HVACMode.OFF
 
-    def _get_power_on_primer(self):
+    def _get_power_on_primer(self, is_device_powered_off=None):
         """Return the command to send before the target command, if any."""
         if 'on' in self._commands:
             return self._commands['on']
 
-        if 'power' in self._commands and self._is_device_powered_off():
+        if is_device_powered_off is None:
+            is_device_powered_off = self._is_device_powered_off()
+
+        if 'power' in self._commands and is_device_powered_off:
             return self._commands['power']
 
         return None
 
-    async def _send_power_off_command(self):
+    async def _send_power_off_command(self, is_device_powered_off=None):
         """Send the command that turns the device off, if needed."""
+        if is_device_powered_off is None:
+            is_device_powered_off = self._is_device_powered_off()
+
         if 'power' in self._commands:
-            if self._is_device_powered_off():
+            if is_device_powered_off:
                 return
 
             await self._controller.send(self._commands['power'])
@@ -412,7 +437,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
 
         await self._controller.send(self._commands['off'])
 
-    async def send_command(self):
+    async def send_command(self, fallback_hvac_mode=None):
         async with self._temp_lock:
             try:
                 self._on_by_remote = False
@@ -420,12 +445,13 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
                 fan_mode = self._current_fan_mode
                 swing_mode = self._current_swing_mode
                 target_temperature = '{0:g}'.format(self._target_temperature)
+                is_device_powered_off = self._is_device_powered_off(fallback_hvac_mode)
 
                 if operation_mode.lower() == HVACMode.OFF:
-                    await self._send_power_off_command()
+                    await self._send_power_off_command(is_device_powered_off)
                     return
 
-                primer_command = self._get_power_on_primer()
+                primer_command = self._get_power_on_primer(is_device_powered_off)
                 if primer_command is not None:
                     await self._controller.send(primer_command)
                     await asyncio.sleep(self._delay)
