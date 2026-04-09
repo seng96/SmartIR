@@ -16,7 +16,7 @@ from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.helpers.event import async_track_state_change, async_track_state_change_event
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.restore_state import RestoreEntity
-from . import COMPONENT_ABS_DIR, Helper
+from . import Helper, get_device_files_absdir
 from .controller import get_controller
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,29 +64,11 @@ def _get_command_configuration_error(commands):
 
     return None
 
-
-def _get_device_files_absdir(platform):
-    """Return the device codes directory for the current execution layout."""
-    component_codes_dir = os.path.join(COMPONENT_ABS_DIR, 'codes', platform)
-    repo_codes_dir = os.path.join(
-        os.path.dirname(os.path.dirname(COMPONENT_ABS_DIR)),
-        'codes',
-        platform,
-    )
-
-    if os.path.isdir(component_codes_dir):
-        return component_codes_dir
-
-    if os.path.isdir(repo_codes_dir):
-        return repo_codes_dir
-
-    return component_codes_dir
-
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IR Climate platform."""
     _LOGGER.debug("Setting up the smartir platform")
     device_code = config.get(CONF_DEVICE_CODE)
-    device_files_absdir = _get_device_files_absdir('climate')
+    device_files_absdir = get_device_files_absdir('climate')
 
     if not os.path.isdir(device_files_absdir):
         os.makedirs(device_files_absdir)
@@ -210,24 +192,39 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
                 self._last_on_operation = last_state.attributes['last_on_operation']
 
         if self._temperature_sensor:
-            async_track_state_change_event(self.hass, self._temperature_sensor, 
-                                           self._async_temp_sensor_changed)
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass,
+                    self._temperature_sensor,
+                    self._async_temp_sensor_changed,
+                )
+            )
 
             temp_sensor_state = self.hass.states.get(self._temperature_sensor)
             if temp_sensor_state and temp_sensor_state.state != STATE_UNKNOWN:
                 self._async_update_temp(temp_sensor_state)
 
         if self._humidity_sensor:
-            async_track_state_change_event(self.hass, self._humidity_sensor, 
-                                           self._async_humidity_sensor_changed)
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass,
+                    self._humidity_sensor,
+                    self._async_humidity_sensor_changed,
+                )
+            )
 
             humidity_sensor_state = self.hass.states.get(self._humidity_sensor)
             if humidity_sensor_state and humidity_sensor_state.state != STATE_UNKNOWN:
                 self._async_update_humidity(humidity_sensor_state)
 
         if self._power_sensor:
-            async_track_state_change_event(self.hass, self._power_sensor, 
-                                           self._async_power_sensor_changed)
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass,
+                    self._power_sensor,
+                    self._async_power_sensor_changed,
+                )
+            )
 
     @property
     def unique_id(self):

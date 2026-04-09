@@ -40,6 +40,11 @@ Example device code snippet:
 
 If a device code defines `commands.on`, the current compatible behavior is unchanged. If a device code defines `commands.power`, it must not also define `commands.on` or `commands.off`.
 
+## Reload behavior
+After you update the `climate:` SmartIR YAML configuration or modify an existing file in `codes/climate/*.json`, you can call the `smartir.reload` service to rebuild SmartIR climate entities without restarting the whole Home Assistant instance.
+
+This reload support only covers SmartIR's own YAML configuration and device JSON definitions. If the change depends on other Home Assistant integrations or core settings that require restart, a full restart may still be necessary.
+
 ## Example (using broadlink controller):
 Add a Broadlink RM device named "Bedroom" via config flow (read the [docs](https://www.home-assistant.io/integrations/broadlink/)).
 

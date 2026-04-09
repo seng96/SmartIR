@@ -14,6 +14,7 @@ from aiohttp import ClientSession
 from homeassistant.const import (
     ATTR_FRIENDLY_NAME, __version__ as current_ha_version)
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.reload import async_setup_reload_service
 from homeassistant.helpers.typing import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ COMPONENT_ABS_DIR = os.path.dirname(
 
 CONF_CHECK_UPDATES = 'check_updates'
 CONF_UPDATE_BRANCH = 'update_branch'
+RELOAD_PLATFORMS = ["climate", "fan", "light", "media_player"]
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
@@ -42,8 +44,27 @@ CONFIG_SCHEMA = vol.Schema({
     })
 }, extra=vol.ALLOW_EXTRA)
 
+
+def get_device_files_absdir(platform):
+    """Return the device codes directory for the current execution layout."""
+    component_codes_dir = os.path.join(COMPONENT_ABS_DIR, 'codes', platform)
+    repo_codes_dir = os.path.join(
+        os.path.dirname(os.path.dirname(COMPONENT_ABS_DIR)),
+        'codes',
+        platform,
+    )
+
+    if os.path.isdir(component_codes_dir):
+        return component_codes_dir
+
+    if os.path.isdir(repo_codes_dir):
+        return repo_codes_dir
+
+    return component_codes_dir
+
 async def async_setup(hass, config):
     """Set up the SmartIR component."""
+    await async_setup_reload_service(hass, DOMAIN, RELOAD_PLATFORMS)
     conf = config.get(DOMAIN)
 
     if conf is None:

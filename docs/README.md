@@ -67,5 +67,21 @@ Click on the links below for instructions on how to configure each platform.
 * [Light platform](/docs/LIGHT.md)
 <br><br>
 
+## Fast reload
+SmartIR supports a dedicated reload flow for its YAML platforms. After you change SmartIR-related entries in `configuration.yaml`, or update an existing device definition under `codes/climate/*.json`, `codes/fan/*.json`, `codes/light/*.json`, or `codes/media_player/*.json`, you can reload SmartIR instead of restarting the entire Home Assistant instance.
+
+Use the Home Assistant service `smartir.reload`, or trigger it from Developer Tools after saving your YAML changes.
+
+This reload flow is intended for:
+- SmartIR YAML platform configuration changes
+- Updates to existing SmartIR device JSON files in the `codes` directory
+
+You should still expect a full Home Assistant restart to be required when:
+- The change is outside SmartIR's own YAML platforms
+- Home Assistant core or another integration requires restart for its own configuration changes
+- You changed the SmartIR Python source code itself
+
+If reload does not pick up your changes, check the Home Assistant logs first to confirm the YAML and JSON files are still valid.
+
 ## See also
 * [Discussion about SmartIR Climate (Home Assistant Community)](https://community.home-assistant.io/t/smartir-control-your-climate-tv-and-fan-devices-via-ir-rf-controllers/)

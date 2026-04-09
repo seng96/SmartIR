@@ -147,6 +147,24 @@ def _install_stubs():
             raise NotImplementedError
 
     smartir.Helper = Helper
+
+    def get_device_files_absdir(platform):
+        component_codes_dir = str(
+            ROOT / "custom_components" / "smartir" / "codes" / platform
+        )
+        repo_codes_dir = str(ROOT / "codes" / platform)
+
+        import os
+
+        if os.path.isdir(component_codes_dir):
+            return component_codes_dir
+
+        if os.path.isdir(repo_codes_dir):
+            return repo_codes_dir
+
+        return component_codes_dir
+
+    smartir.get_device_files_absdir = get_device_files_absdir
     sys.modules["custom_components.smartir"] = smartir
 
 
@@ -295,7 +313,7 @@ class ClimatePowerPrimerTests(unittest.IsolatedAsyncioTestCase):
             return path == str(repo_codes_dir)
 
         with patch.object(self.climate_module.os.path, "isdir", side_effect=fake_isdir):
-            device_dir = self.climate_module._get_device_files_absdir("climate")
+            device_dir = self.climate_module.get_device_files_absdir("climate")
 
         self.assertEqual(device_dir, str(repo_codes_dir))
 

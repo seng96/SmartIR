@@ -19,7 +19,7 @@ from homeassistant.util.percentage import (
     ordered_list_item_to_percentage,
     percentage_to_ordered_list_item
 )
-from . import COMPONENT_ABS_DIR, Helper
+from . import Helper, get_device_files_absdir
 from .controller import get_controller
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,8 +47,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IR Fan platform."""
     device_code = config.get(CONF_DEVICE_CODE)
-    device_files_subdir = os.path.join('codes', 'fan')
-    device_files_absdir = os.path.join(COMPONENT_ABS_DIR, device_files_subdir)
+    device_files_absdir = get_device_files_absdir('fan')
 
     if not os.path.isdir(device_files_absdir):
         os.makedirs(device_files_absdir)
@@ -154,9 +153,14 @@ class SmartIRFan(FanEntity, RestoreEntity):
             if 'last_on_speed' in last_state.attributes:
                 self._last_on_speed = last_state.attributes['last_on_speed']
 
-            if self._power_sensor:
-                async_track_state_change_event(self.hass, self._power_sensor, 
-                                               self._async_power_sensor_changed)
+        if self._power_sensor:
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass,
+                    self._power_sensor,
+                    self._async_power_sensor_changed,
+                )
+            )
 
     @property
     def unique_id(self):

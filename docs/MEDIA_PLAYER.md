@@ -14,6 +14,11 @@ Find your device's brand code [here](MEDIA_PLAYER.md#available-codes-for-tv-devi
 **power_sensor** (Optional): *entity_id* for a sensor that monitors whether your device is actually On or Off. This may be a power monitor sensor. (Accepts only on/off states)<br />
 **source_names** (Optional): Override the names of sources as displayed in HomeAssistant (see below)<br />
 
+## Reload behavior
+After you update the `media_player:` SmartIR YAML configuration or modify an existing file in `codes/media_player/*.json`, you can call the `smartir.reload` service to rebuild SmartIR media player entities without restarting the whole Home Assistant instance.
+
+This reload support only applies to SmartIR-managed YAML configuration and device JSON files. Changes outside SmartIR, or changes that require another integration to restart, may still require a full Home Assistant restart.
+
 ## Example (using broadlink controller):
 Add a Broadlink RM device named "Bedroom" via config flow (read the [docs](https://www.home-assistant.io/integrations/broadlink/)).
 

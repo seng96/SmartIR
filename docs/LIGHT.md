@@ -14,6 +14,11 @@ Find your device's brand code [here](LIGHT.md#available-codes-for-light-devices)
 **delay** (Optional): Adjusts the delay in seconds between multiple commands. The default is 0.5 <br />
 **power_sensor** (Optional): *entity_id* for a sensor that monitors whether your device is actually On or Off. This may be a power monitor sensor. (Accepts only on/off states)<br />
 
+## Reload behavior
+After you update the `light:` SmartIR YAML configuration or modify an existing file in `codes/light/*.json`, you can call the `smartir.reload` service to rebuild SmartIR light entities without restarting the whole Home Assistant instance.
+
+This reload support only applies to SmartIR-managed YAML configuration and device JSON files. Changes outside SmartIR, or changes that require another integration to restart, may still require a full Home Assistant restart.
+
 ## Example (using broadlink controller)
 
 Add a Broadlink RM device named "Bedroom" via config flow (read the [docs](https://www.homeassistant.io/integrations/broadlink/)).

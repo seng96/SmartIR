@@ -22,7 +22,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_state_change_event
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.restore_state import RestoreEntity
-from . import COMPONENT_ABS_DIR, Helper
+from . import Helper, get_device_files_absdir
 from .controller import get_controller
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,7 +55,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-
 async def async_setup_platform(
     hass,
     config,
@@ -64,8 +63,7 @@ async def async_setup_platform(
 ):
     """Set up the IR Light platform."""
     device_code = config.get(CONF_DEVICE_CODE)
-    device_files_subdir = os.path.join("codes", "light")
-    device_files_absdir = os.path.join(COMPONENT_ABS_DIR, device_files_subdir)
+    device_files_absdir = get_device_files_absdir("light")
 
     if not os.path.isdir(device_files_absdir):
         os.makedirs(device_files_absdir)
@@ -202,8 +200,10 @@ class SmartIRLight(LightEntity, RestoreEntity):
                 self._colortemp = last_state.attributes[ATTR_COLOR_TEMP_KELVIN]
 
         if self._power_sensor:
-            async_track_state_change_event(
-                self.hass, self._power_sensor, self._async_power_sensor_changed
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass, self._power_sensor, self._async_power_sensor_changed
+                )
             )
 
     @property
